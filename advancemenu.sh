@@ -1919,6 +1919,11 @@ fi
 
 }
 
+function worldseed(){
+worldseed=$(cat > /home/steam/.config/unity3d/IronGate/Valheim/worlds/${serverdisplayname}.fwl)
+echo -e '\E[32m'"$worldseed "
+}
+
 
 function menu_header() {
 get_current_config
