@@ -575,11 +575,17 @@ function linux_server_update() {
 function Install_steamcmd_client() {
 	#install steamcmd
 	tput setaf 1; echo "$INSTALL_STEAMCMD_LIBSD12" ; tput setaf 9;
+    if command -v apt-get >/dev/null; then
+    echo msttcorefonts msttcorefonts/accepted-mscorefonts-eula select true | sudo debconf-set-selections
+    apt install steamcmd libsdl2-2.0-0 libsdl2-2.0-0:i386 -y
+    tput setaf 2; echo "$ECHO_DONE" ; tput setaf 9;
+    else command -v yum >/dev/null; then
     cd /home/steam
 	mkdir steamcmd
 	cd /home/steam/steamcmd
 	wget https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
 	tar xf steamcmd_linux.tar.gz
+    fi
 	#### Need to add code to veriy firewall system and if enabled.
 	#### Below is the line needed for steamcmd
 	#### These should also be added to as port forwards on your network router.
