@@ -65,7 +65,7 @@ worldpath=/home/steam/.config/unity3d/IronGate/Valheim/worlds
 backupPath=/home/steam/backups
 #worldname=""
 request99="n"
-readarray -t worldlistarray < /home/steam/worlds.txt 
+worldlistarray=$"(readarray -t worldlistarray < /home/steam/worlds.txt)"
 ###############################################################
 # Set Menu Version for menu display
 mversion="2.3.3-Lofn.beta"
