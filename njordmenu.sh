@@ -578,10 +578,9 @@ function Install_steamcmd_client() {
     if command -v apt-get >/dev/null; then
     echo steam steam/license note '' | debconf-set-selections
     echo steam steam/question select 'I AGREE' | debconf-set-selections
-    echo ' || true
     apt install steamcmd libsdl2-2.0-0 libsdl2-2.0-0:i386 -y
     tput setaf 2; echo "$ECHO_DONE" ; tput setaf 9;
-    else command -v yum >/dev/null; then
+    elif command -v yum >/dev/null; then
     cd /home/steam
 	mkdir steamcmd
 	cd /home/steam/steamcmd
