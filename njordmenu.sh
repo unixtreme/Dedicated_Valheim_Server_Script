@@ -65,7 +65,7 @@ worldpath=/home/steam/.config/unity3d/IronGate/Valheim/worlds
 backupPath=/home/steam/backups
 #worldname=""
 request99="n"
-worldlistarray=$"(readarray -t worldlistarray < /home/steam/worlds.txt)"
+readarray -t worldlistarray < /home/steam/worlds.txt
 ###############################################################
 # Set Menu Version for menu display
 mversion="2.3.3-Lofn.beta"
@@ -515,7 +515,7 @@ function linux_server_update() {
 	#        WTF is curl not installed by default... come on man!
     tput setaf 1; echo "$INSTALL_ADDITIONAL_FILES" ; tput setaf 9;
     if command -v apt-get >/dev/null; then
-        apt install libsdl2-2.0-0 libsdl2-2.0-0:i386 git mlocate net-tools unzip curl -y
+        apt install lib32gcc1 libsdl2-2.0-0 libsdl2-2.0-0:i386 git mlocate net-tools unzip curl -y
     elif command -v yum >/dev/null; then
         yum install glibc.i686 libstdc++.i686 git mlocate net-tools unzip curl -y
     else
@@ -575,9 +575,9 @@ function linux_server_update() {
 function Install_steamcmd_client() {
 	#install steamcmd
 	tput setaf 1; echo "$INSTALL_STEAMCMD_LIBSD12" ; tput setaf 9;
-	cd /usr/games
+    cd /home/steam
 	mkdir steamcmd
-	cd /usr/games/steamcmd
+	cd /home/steam/steamcmd
 	wget https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
 	tar xf steamcmd_linux.tar.gz
 	#### Need to add code to veriy firewall system and if enabled.
@@ -599,10 +599,7 @@ function Install_steamcmd_client() {
     #build symbolic link for steamcmd
     #Not needed in my script I do not think ...
     tput setaf 1; echo "$INSTALL_BUILD_SYM_LINK_STEAMCMD" ; tput setaf 9;
-    if command -v apt >/dev/null; then
-	    ln -s /usr/games/steamcmd /home/steam/steamcmd
-		# Leaving in ..
-    elif command -v apt-get >/dev/null; then
+    if command -v apt-get >/dev/null; then
 	    ln -s /usr/games/steamcmd /home/steam/steamcmd
 		# Leaving in ..
     else 
@@ -2069,7 +2066,7 @@ function are_mods_enabled() {
 function set_steamexe() {
     tput setaf 1; echo "$FUNCTION_SET_STEAMEXE_INFO" ; tput setaf 9;
     if command -v apt-get >/dev/null; then
-	    steamexe=/home/steam/steamcmd/steamcmd.sh
+	    steamexe=/home/steam/steamcmd
     elif command -v yum >/dev/null; then
 	    steamexe=/home/steam/steamcmd/steamcmd.sh
     else
