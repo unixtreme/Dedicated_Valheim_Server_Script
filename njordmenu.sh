@@ -575,9 +575,9 @@ function linux_server_update() {
 function Install_steamcmd_client() {
 	#install steamcmd
 	tput setaf 1; echo "$INSTALL_STEAMCMD_LIBSD12" ; tput setaf 9;
-	cd /home/steam
+	cd /usr/games
 	mkdir steamcmd
-	cd /home/steam/steamcmd
+	cd /usr/games/steamcmd
 	wget https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
 	tar xf steamcmd_linux.tar.gz
 	#### Need to add code to veriy firewall system and if enabled.
@@ -599,6 +599,10 @@ function Install_steamcmd_client() {
     #build symbolic link for steamcmd
     #Not needed in my script I do not think ...
     tput setaf 1; echo "$INSTALL_BUILD_SYM_LINK_STEAMCMD" ; tput setaf 9;
+    if command -v apt >/dev/null; then
+	    ln -s /usr/games/steamcmd /home/steam/steamcmd
+		# Leaving in ..
+    elif
     if command -v apt-get >/dev/null; then
 	    ln -s /usr/games/steamcmd /home/steam/steamcmd
 		# Leaving in ..
