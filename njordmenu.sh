@@ -602,8 +602,7 @@ function Install_steamcmd_client() {
     if command -v apt >/dev/null; then
 	    ln -s /usr/games/steamcmd /home/steam/steamcmd
 		# Leaving in ..
-    elif
-    if command -v apt-get >/dev/null; then
+    elif command -v apt-get >/dev/null; then
 	    ln -s /usr/games/steamcmd /home/steam/steamcmd
 		# Leaving in ..
     else 
