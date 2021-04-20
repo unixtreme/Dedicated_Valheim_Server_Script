@@ -563,6 +563,8 @@ if [ "$confirmOfficialUpdates" == "y" ]; then
     tput setaf 2; echo "$FUNCTION_INSTALL_VALHEIM_UPDATE_APPLY_INFO" ; tput setaf 9; 
     /home/steam/steamcmd +login anonymous +force_install_dir ${valheimInstallPath} +app_update 896660 validate +exit
     chown -R steam:steam ${valheimInstallPath}
+    sleep 1
+    systemctl restart valheimserver.service
     echo ""
 else
     echo "$FUNCTION_INSTALL_VALHEIM_UPDATES_CANCEL"
