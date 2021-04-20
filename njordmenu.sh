@@ -1866,7 +1866,6 @@ currentPortCheck=$(perl -n -e '/\-public "?([^"]+)"?$/ && print "$1\n"' ${valhei
   fi
 }
 
-
 function display_public_IP() {
 externalip=$(curl -s ipecho.net/plain;echo)
 echo -e '\E[32m'"$EXTERNAL_IP $whateverzerowantstocalthis "$externalip ; tput setaf 9;
@@ -1919,6 +1918,10 @@ fi
 
 }
 
+function worldseed(){
+worldseed=$(cat > /home/steam/.config/unity3d/IronGate/Valheim/worlds/${serverdisplayname}.fwl)
+echo -e '\E[32m'"$worldseed "
+}
 
 function menu_header() {
 get_current_config
