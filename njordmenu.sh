@@ -580,7 +580,7 @@ function Install_steamcmd_client() {
     echo steam steam/question select 'I AGREE' | debconf-set-selections
     apt install steamcmd libsdl2-2.0-0 libsdl2-2.0-0:i386 -y
     tput setaf 2; echo "$ECHO_DONE" ; tput setaf 9;
-    elif command -v yum >/dev/null; then
+    else command -v yum >/dev/null; then
     cd /home/steam
 	mkdir steamcmd
 	cd /home/steam/steamcmd
