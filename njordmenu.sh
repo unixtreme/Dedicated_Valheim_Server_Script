@@ -2070,7 +2070,7 @@ function are_mods_enabled() {
 function set_steamexe() {
     tput setaf 1; echo "$FUNCTION_SET_STEAMEXE_INFO" ; tput setaf 9;
     if command -v apt-get >/dev/null; then
-	    steamexe=/home/steam/steamcmd
+	    steamexe=/home/steam/steamcmd/steamcmd.sh
     elif command -v yum >/dev/null; then
 	    steamexe=/home/steam/steamcmd/steamcmd.sh
     else
