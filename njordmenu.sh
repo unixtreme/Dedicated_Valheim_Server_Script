@@ -106,7 +106,7 @@ debugmsg="y"
 # if [ "$debugmsg" == "y" ] ; then echo "something" ; fi
 ###############################################################
 # Set Menu Version for menu display
-mversion="2.3.3-Lofn.beta"
+mversion="2.5-Lofn.beta"
 ldversion="0.4.042620212000.alpha"
 ### -- Use are your own risk -- 
 ### dev -- Adding new code.
