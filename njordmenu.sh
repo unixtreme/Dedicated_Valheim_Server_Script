@@ -19,25 +19,27 @@
 #### Modifier: Lord/Ranger(Dumoss)
 #### Forked from: Njord advancemenu.ld (with beta) Updated: 10-APR-2021
 ####
-#### The main focus of this was to add Linux support for RH yum based systems.
-#### I use OEL7 on a Solaris server box that can handle a lot.
-#### Even thought I am only going to run 3 at most.
+#### I would like to thank "Dr." Zerobandwidth "Frankenstein"
+#### and the development team of "Igor's" for putting 
+#### this wonderfull "monster" script together. :)
+####
+#### The main focus of this was to add Linux support for 
+#### Fedora-Cento-RHEL-OEL-yum/dnf based systems.
 #### 
-#### But this lead to ... 
+#### To allow control multiple Valheim servers running on a single node
+#### based on WORLDNAME and is installed under "${worldpath}/${worldname}"
 ####
-#### Allow the handling of many Valheim systems running on a single node.
-#### Based on WORLDNAME -- installed under "${worldpath}/${worldname}"
-#### Using different ports -- Added some simple firewall port add.
+#### TO have some simple firewall security control related to these systems. - (WIP)
 ####
-#### I would like to thank Zerobandwidth and Team for putting 
-#### together this wonderfull script.
 #### *** - Dumoss
-#### 
+####
 ###############################################################################################
 ###############################################################################################
-# Current Options: DE=German, EN=English, FR=French, SP=Spanish"
+#### Current Options: DE=German, EN=English, FR=French, SP=Spanish"
 ###############################################################################################
 ###############################################################################################
+source /etc/os-release
+
 if [ "$1" == "" ] 
 then 
 	LANGUAGE=EN
@@ -45,6 +47,17 @@ else
 	LANGUAGE=$1
 fi 
 source lang/$LANGUAGE.conf
+
+fileworldlist=/home/steam/worlds.txt
+
+if [ -f "$fileworldlist" ]; then
+	readarray -t worldlistarray < $fileworldlist
+else 
+   	touch $fileworldlist
+	echo "Default" >> $fileworldlist
+	readarray -t worldlistarray < $fileworldlist
+fi
+worldname=""
 #############################################################
 ########################  Santiy Check  #####################
 #############################################################
@@ -56,20 +69,65 @@ echo "$(tput setaf 4)"$DRAW60""
 [[ "$EUID" -eq 0 ]] || exec sudo "$0" "$@"
 clear
 ###############################################################
-#Only change this if you know what you are doing
-#Valheim Server Install location(Default) 
+################### Default Variables #########################
+###############################################################
+### NOTE: Only change this if you know what you are doing   ###    
+###############################################################
+###############################################################
+### Valheim Server Install location(Default) 
 valheimInstallPath=/home/steam/valheimserver
-#Valheim World Data Path(Default)
+### Valheim World Data Path(Default)
 worldpath=/home/steam/.config/unity3d/IronGate/Valheim/worlds
-#Backup Directory ( Default )
+### Backup Directory ( Default )
 backupPath=/home/steam/backups
-#worldname=""
-request99="n"
-readarray -t worldlistarray < /home/steam/worlds.txt
+###
+### Defaults are "n" on the below parameters.
+###
+### This option is only for the steamcmd install where it 
+### is not included in the "steam" client install ... ie RH/OEL-yum
+### Set this to delete all files from the /home/steam/steamcmd directory to install steamcmd fresh.
+freshinstall="n"
+### <n : no>
+### <y : yes>
+### 
+### Firewall setup..............
+### Do you use a firewall?
+usefw="n" 
+### <n : no>
+### <y : yes>
+### what firewall do you want to use?  
+### <n : none> 
+### <u : ufw> 
+### <f : firewalld> 
+### <i : iptables> 
+fwused="n" 
+###############################################################
+debugmsg="y"
+# if [ "$debugmsg" == "y" ] ; then echo "something" ; fi
 ###############################################################
 # Set Menu Version for menu display
 mversion="2.3.3-Lofn.beta"
-ldversion="2.041920212040.Beta"
+ldversion="0.4.042620212000.alpha"
+### -- Use are your own risk -- 
+### dev -- Adding new code.
+### alpha -- Dev team review and testing of the new code.
+### beta -- Good for Public Testing.
+### released -- Never -- When placed in advance(menu).sh
+###
+### Please note that this is a play ground file for me and 
+### allows Zerobandwidth do determine what to pull into the main advance(menu).sh file.
+### 
+### I have done a lot ( and still ) testing of this new code 
+### and it seams to be working as original intended, but
+### now for OEL/REL/Fedora and centos tested.
+###
+### If you are using the above server versions of Linux and the added repos cause issues,
+### I have provided the 3 most causes and fixes in the function ***linux_server_update*** text.
+###
+### I am still in design mode for the firewall stuff.
+### Current it works 99% for FireWallD only at this time.
+###
+### Other Linux flavors and firewall systems to be added.
 ########################################################################
 #############################Set COLOR VARS#############################
 ########################################################################
@@ -84,39 +142,39 @@ LIGHTRED='\033[1;31m'
 LIGHTGREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 WHITE='\033[1;37m'
-CLEAR='\e[0m'
+clear='\e[0m'
 ##
 # Color Functions
 ##
 ColorRed(){ 
-        echo -ne $RED$1$CLEAR 
+        echo -ne $RED$1$clear 
 }
 ColorGreen(){
-         echo -ne $GREEN$1$CLEAR
+         echo -ne $GREEN$1$clear
 }
 ColorOrange(){
-	echo -ne $ORANGE$1$CLEAR
+	echo -ne $ORANGE$1$clear
 }
 ColorBlue(){
-	echo -ne $BLUE$1$CLEAR
+	echo -ne $BLUE$1$clear
 }
 ColorPurple(){
-	echo -ne $PURPLE$1$CLEAR
+	echo -ne $PURPLE$1$clear
 }
 ColorCyan(){
-	echo -ne $CYAN$1$CLEAR
+	echo -ne $CYAN$1$clear
 }
 ColorLightRed(){
-	echo -ne $LIGHTRED$1$CLEAR
+	echo -ne $LIGHTRED$1$clear
 }
 ColorLightGreen(){
-	echo -ne $LIGHTGREEN$1$CLEAR
+	echo -ne $LIGHTGREEN$1$clear
 }
 ColorYellow(){
-	echo -ne $LIGHTYELLOW$1$CLEAR
+	echo -ne $LIGHTYELLOW$1$clear
 }
 ColorWhite(){
-	echo -ne $WHITE$1$CLEAR
+	echo -ne $WHITE$1$clear
 }
 ########################################################################
 #####################Check for Menu Updates#############################
@@ -271,10 +329,7 @@ $(ColorRed ''"$DRAW60"'')"
 				clear		
 				echo ""
 		fi
-		
-		
-		
-		
+
 		# Take user input for Valheim Server password
 		# Added security for harder passwords
 		echo ""        
@@ -385,20 +440,45 @@ $(ColorRed ''"$DRAW60"'')"
 		#### These should also be added to as port forwards on your network router.
 		####
 		#
-		minportnumber=${portnumber}
-		maxportnumber=${portnumber}+3
-		if command -v ufw >/dev/null; then
-			# ufw allow udp from any to any port $minportnumber-$maxportnumber
-			# The above command needs to be validated.
-			echo ""
-		elif command -v firewalld >/dev/null; then
-			systemctl start firewalld
-			systemctl status firewalld
-			firewall-cmd --permanent --zone=public --add-port={$minportnumber-$maxportnumber/tcp,$minportnumber-$maxportnumber/udp}
-			firewall-cmd --reload
-		else
-			echo ""
-		fi
+		if [ "${usefw}" == "y" ] ; then 
+			if [ "${fwused}" == "u" ] ; then
+				if command -v ufw >/dev/null; then
+					# ufw allow udp from any to any port $minportnumber-$maxportnumber
+					# The above command needs to be validated.
+					echo ""
+				fi
+			elif [ "${fwused}" == "i" ] ; then
+				if command -v iptables >/dev/null; then
+					# sudo iptables –A INPUT –p upd ––dport ${portnumber},${portnumber}+1,${portnumber}+2) –j ACCEPT
+					#if [ "$ID" == "fedora" ] || [ "$ID "= "centos" ] || [ "$ID" == "ol" ] || [ "$ID" = "rhel" ] )  ; then
+					#	sudo /sbin/service iptables save
+					#else
+					#	sudo /sbin/iptables–save
+					#fi
+					echo ""	
+				fi
+			elif [ "${fwused}" == "f" ] ; then		
+				if command -v firewalld >/dev/null; then
+					if [ "$is_firewall_enabled" == "y" ] ; then
+						if [ "$get_firewall_status" == "y" ] ; then
+							sftc="ste"
+							create_firewalld_service_file
+							add_firewalld_public_service
+						fi
+					fi
+					#systemctl start firewalld
+					#systemctl status firewalld
+					#firewall-cmd --permanent --zone=public --add-port=${portnumber}-${portnumber+2}/udp
+					#firewall-cmd --reload
+				fi
+			else		    
+				echo ""
+			fi
+		else 
+			if [ "${is_firewall_enabled}" == "y" ] ; then 
+				disable_all_firewalls
+			fi
+		fi		
 		tput setaf 2; echo "$ECHO_DONE" ; tput setaf 9;
 		sleep 1
 		#build config for start_valheim.sh
@@ -499,15 +579,35 @@ EOF
 # LordDumoss (LD): Add yum support. Might be a better way. But it works. 
 # LD: Changed where the steamcmd required libs are installed.
 ########################################################################
+# SUDO?
+#########
 function linux_server_update() {
 #check for updates and upgrade the system auto yes
+# ID=debian=apt
+# ID=ubuntu=apt
+# ID=FreeBSD=pkg
+
+		echo "$ID"
+		echo "$VERSION"
+		echo "${VERSION:0:1}"
+		
     tput setaf 1; echo "$CHECK_FOR_UPDATES" ; tput setaf 9;
     if command -v apt-get >/dev/null; then
-        apt update && apt upgrade -y
+	    sudo apt update && apt upgrade -y
+	elif command -v pkg >/dev/null; then
+		echo "Insert command here."    
+	#elif command -v dnf >/dev/null; then
     elif command -v yum >/dev/null; then
-        yum clean all && yum update -y && yum upgrade -y
+		if [[ "$ID" == "fedora" ]] || [[ ( "$ID" == "centos" || "$ID" == "ol" || "$ID" == "rhel" ) && "${VERSION:0:1}" == "8" ]] ; then
+			sudo dnf clean all && dnf update -y && dnf upgrade -y
+		elif [[ ( "$ID" == "centos" || "$ID" == "ol" || "$ID" == "rhel" ) && "${VERSION:0:1}" == "7" ]] ; then
+			sudo yum clean all && yum update -y && yum upgrade -y
+			echo "yum'ed"
+		else
+			echo "oops1"
+		fi
     else
-        echo "..."
+        echo "oops2"
     fi
     tput setaf 2; echo "$ECHO_DONE" ; tput setaf 9;
     sleep 1
@@ -515,108 +615,239 @@ function linux_server_update() {
 	#        WTF is curl not installed by default... come on man!
     tput setaf 1; echo "$INSTALL_ADDITIONAL_FILES" ; tput setaf 9;
     if command -v apt-get >/dev/null; then
-        apt install lib32gcc1 libsdl2-2.0-0 libsdl2-2.0-0:i386 git mlocate net-tools unzip curl -y
+        sudo apt install lib32gcc1 libsdl2-2.0-0 libsdl2-2.0-0:i386 git mlocate net-tools unzip curl -y
+    #elif command -v dnf >/dev/null; then
+	# Seams RH went to dnf as well in RHEL8
+	# Might use ID_LIKE="fedora" and VERSION_ID="7.9" instead? But this works.
+	#
     elif command -v yum >/dev/null; then
-        yum install glibc.i686 libstdc++.i686 git mlocate net-tools unzip curl -y
-    else
-        echo "..."
+		if [[ "$ID" == "fedora" ]] || [[ ( "$ID" == "centos" || "$ID" == "ol" || "$ID" == "rhel" ) && "${VERSION:0:1}" == "8" ]] ; then
+			sudo dnf install glibc.i686 libstdc++.i686 git mlocate net-tools unzip curl -y
+		elif [[ ( "$ID" == "centos" || "$ID" == "ol" || "$ID" == "rhel" ) && "${VERSION:0:1}" == "7" ]] ; then	
+			sudo yum install glibc.i686 libstdc++.i686 git mlocate net-tools unzip curl -y
+			echo "yum'ed"
+	    else
+			echo "oops3"
+		fi
+	else 
+		echo "oops4"
     fi
     tput setaf 2; echo "$ECHO_DONE" ; tput setaf 9;
     sleep 1
     #install software-properties-common for add-apt-repository command below
     tput setaf 1; echo "$INSTALL_SPCP" ; tput setaf 9;
     if command -v apt-get >/dev/null; then
-        apt install software-properties-common
-    elif command -v yum >/dev/null; then
-        echo "$FUNCTION_LINUX_SERVER_UPDATE_YUM_REQUIRED_NO"
+        sudo apt install software-properties-common
+    #elif command -v yum >/dev/null; then
 	else
-        echo "..."
+        echo "$FUNCTION_LINUX_SERVER_UPDATE_YUM_REQUIRED_NO"
     fi
     tput setaf 2; echo "$ECHO_DONE" ; tput setaf 9;
     sleep 1
     #add multiverse repo
     tput setaf 1; echo "$ADD_MULTIVERSE" ; tput setaf 9;
     if command -v apt-get >/dev/null; then
-        add-apt-repository -y multiverse
+        sudo add-apt-repository -y multiverse
     elif command -v yum >/dev/null; then
-         echo "$FUNCTION_LINUX_SERVER_UPDATE_RHL_REQUIRED_NO"
+		#if command -v dnf >/dev/null; then	
+		# Need to add the following repos.
+		#### Adding these repos allowed steam/vulkan/and the other dependances to install on OEL/RH7/Fedora2+
+		#### I even tested starting the steam gui interface. It started just fine.
+		#### https://negativo17.org/steam/
+		#### Remeber the repos keys ... https://rpmfusion.org/keys
+		if [[ "$ID" == "fedora" ]] || [[ ( "$ID" == "centos" || "$ID" == "ol" || "$ID" == "rhel" ) && "${VERSION:0:1}" == "8" ]] ; then
+			sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+			sudo dnf config-manager --add-repo=http://mirror.centos.org/centos/8/os/x86_64/
+			sudo dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+			sudo dnf config-manager --add-repo=https://negativo17.org/repos/fedora-negativo17.repo  
+		elif [[ ( "$ID" == "centos" || "$ID" == "ol" || "$ID" == "rhel" ) && "${VERSION:0:1}" == "7" ]] ; then	
+			sudo yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+			sudo yum-config-manager --add-repo=http://mirror.centos.org/centos/7/os/x86_64/
+			sudo yum localinstall --nogpgcheck https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
+			sudo yum localinstall --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-nonfree-release-7.noarch.rpm
+			sudo yum-config-manager --add-repo=https://negativo17.org/repos/epel-negativo17.repo 
+		else
+			echo "oops5"
+		fi
     else
-        echo "..."
+        echo "oops6"
     fi
     tput setaf 2; echo "$ECHO_DONE" ; tput setaf 9;
     sleep 1
 	#add i386 architecture
     tput setaf 1; echo "$ADD_I386" ; tput setaf 9;
     if command -v apt-get >/dev/null; then
-        dpkg --add-architecture i386
-    elif command -v yum >/dev/null; then
-        echo "$FUNCTION_LINUX_SERVER_UPDATE_RHL_REQUIRED_NO"
+        sudo dpkg --add-architecture i386
+    #elif command -v yum >/dev/null; then
     else
-        echo "..."
+        echo "$FUNCTION_LINUX_SERVER_UPDATE_RHL_REQUIRED_NO"
     fi
     tput setaf 2; echo "$ECHO_DONE" ; tput setaf 9;
     sleep 1
-
     #update system again
     tput setaf 1; echo "$CHECK_FOR_UPDATES_AGAIN" ; tput setaf 9;
     if command -v apt-get >/dev/null; then
-        apt update
+        sudo apt update
     elif command -v yum >/dev/null; then
-        yum update
-    else
-        echo "..."
-    fi
+		#elif command -v dnf >/dev/null; then
+		if [[ "$ID" == "fedora" ]] || [[ ( "$ID" == "centos" || "$ID" == "ol" || "$ID" == "rhel" ) && "${VERSION:0:1}" == "8" ]] ; then
+			sudo dnf update		
+		elif [[ ( "$ID" == "centos" || "$ID" == "ol" || "$ID" == "rhel" ) && "${VERSION:0:1}" == "7" ]] ; then	
+			sudo yum update
+		else
+			echo "oops6"
+		fi
+	fi
     tput setaf 2; echo "$ECHO_DONE" ; tput setaf 9;
     sleep 1
 }
+
 ########################################################################
 ################# LD: Install the steamcmd                 #############
 ########################################################################
 function Install_steamcmd_client() {
-	#install steamcmd
+#install steamcmd
+#### This depends on the Linux flavor and/or whether you need the graphic client or the command line only.
 	tput setaf 1; echo "$INSTALL_STEAMCMD_LIBSD12" ; tput setaf 9;
-    if command -v apt-get >/dev/null; then
-    echo steam steam/license note '' | debconf-set-selections
-    echo steam steam/question select 'I AGREE' | debconf-set-selections
-    apt install steamcmd libsdl2-2.0-0 libsdl2-2.0-0:i386 -y
-    tput setaf 2; echo "$ECHO_DONE" ; tput setaf 9;
-    elif command -v yum >/dev/null; then
-    cd /home/steam
-	mkdir steamcmd
-	cd /home/steam/steamcmd
-	wget https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
-	tar xf steamcmd_linux.tar.gz
-    fi
+	# ID=debian 
+	# ID=ubuntu
+	# ID=FreeBSD=pkg
+	if command -v apt-get >/dev/null; then
+		echo steam steam/license note '' | debconf-set-selections
+		echo steam steam/question select 'I AGREE' | debconf-set-selections
+		sudo apt install steamcmd libsdl2-2.0-0 libsdl2-2.0-0:i386 -y
+		tput setaf 2; echo "$ECHO_DONE" ; tput setaf 9;
+	elif command -v yum >/dev/null; then
+		#if command -v dnf >/dev/null; then
+		if [[ "$ID" == "fedora" ]] || [[ ( "$ID" == "centos" || "$ID" == "ol" || "$ID" == "rhel" ) && "${VERSION:0:1}" == "8" ]] ; then
+	    	sudo dnf -y install steam kernel-modules-extra
+		elif [[ ( "$ID" == "centos" || "$ID" == "ol" || "$ID" == "rhel" ) && "${VERSION:0:1}" == "7" ]] ; then	
+			sudo yum install steam -y
+		else
+			echo "oops7"			
+		fi	
+########################################################################
+#########################  repo help   #################################
+########################################################################
+###
+### You might have the following issues adding the above repos to RH/OeL
+###
+### Why not just remove if exists.
+### If problems with the added repos like
+### --> Finished Dependency Resolution
+### 			Error: Package: ntp-4.2.6p5-22.el7.centos.2.x86_64 (@updates)
+###			Requires: ntpdate = 4.2.6p5-22.el7.centos.2
+###
+### It is because of duplicate entries in the yum local db.
+### To fix:
+###
+### yum install yum-tools
+### rpm -Va > rpmrequest.txt
+### This reports them
+### sudo package-cleanup --dupes
+### This fix them
+### sudo package-cleanup --cleandupes
+###
+########################################################################
+###
+### Transaction check error:
+###   file /usr/share/man/man1/pango-view.1.gz from install of pango-1.42.4-4.el7_7.i686 conflicts with file from package pango-1.42.4-4.el7_7.x86_64
+###   file /usr/share/man/man1/gtk-query-immodules-2.0.1.gz from install of gtk2-2.24.31-1.el7.i686 conflicts with file from package gtk2-2.24.31-1.el7.x86_64
+###   ...
+###
+### These error happen when dependent rpms are being installed for steam (or just update/upgrade)
+### and where the reported rpm is already installed from another repo.
+###
+### The fix this is easy. 
+###
+### <ctrl-c> out of menu
+###
+### Reinstall all of the listed in output like this:
+###
+### yum reinstall pango.x86_64 gtk2.x86_64 
+###
+### This installs the rpm listed in the output from the newly added repos and fixes the error.
+###
+### Rerun the menu script.
+###
+########################################################################
+###
+### The last thing you might need to do is downgrade an rmp/lib version needed for steam 
+###  , which a higher unsupport version is installed
+### yum downgrade <name>
+### or just *** yum remove <name> *** 
+### and let the *** yum install steam *** 
+### Install correct version.
+### 
+########################################################################
+
+# Because there is 100% no yum steamcmd still need to
+
+		steamzipfile="/home/steam/steamcmd/steamcmd_linux.tar.gz"
+		cd /home/steam
+		mkdir steamcmd
+		cd /home/steam/steamcmd
+		if [ -fe $steamzipfile ] ; then 
+			rm $steamzipfile
+		fi	
+		if [ "$freshinstall" = "y" ] ; then 
+			rm -rfv /home/steam/steamcmd/*
+		fi
+		wget https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
+		tar xf steamcmd_linux.tar.gz
+	fi
+			
 	#### Need to add code to veriy firewall system and if enabled.
 	#### Below is the line needed for steamcmd
 	#### These should also be added to as port forwards on your network router.
-    if command -v ufw >/dev/null; then
-	    echo ""
-		# Need to add ufw commands. 
-    elif command -v firewalld >/dev/null; then
-        systemctl start firewalld
-        systemctl status firewalld
-        firewall-cmd --permanent --zone=public  --add-port={1200/udp,27000-27015/udp,27020/udp,27015-27016/tcp,27030-27039/tcp}
-        firewall-cmd --reload
+	if [ "${usefw}" == "y" ] ; then 
+		if [ "${fwused}" == "u" ] ; then
+			if command -v ufw >/dev/null; then
+				# ufw allow udp from any to any port $minportnumber-$maxportnumber
+				# The above command needs to be validated.
+				echo "WIP Need to add."
+				echo ""
+			fi
+		elif [ "${fwused}" == "i" ] ; then
+			#if command -v iptables >/dev/null; then ; fi
+			#if command -v ip6tables >/dev/null; then ; fi
+			#if command -v eptables >/dev/null; then ; fi
+			echo "WIP Need to add."
+		elif [ "${fwused}" == "f" ] ; then		
+			if command -v firewalld >/dev/null; then
+				if [ "$is_firewall_enabled" == "y" ] ; then
+					if [ "$get_firewall_status" == "y" ] ; then
+						sftc="ste"
+						create_firewalld_service_file
+						add_firewalld_public_service
+					fi
+				fi		
+				#sudo firewall-cmd --permanent --zone=public  --add-port={1200/udp,27000-27015/udp,27020/udp,27015-27016/tcp,27030-27039/tcp}
+				#sudo firewall-cmd --reload
+			fi
+		else		    
+			echo ""
+		fi
 	else
-       echo "..."
-    fi
+		if [ "${is_firewall_enabled}" == "y" ] ; then 
+			disable_all_firewalls
+		fi
+	fi	
     tput setaf 2; echo "$ECHO_DONE" ; tput setaf 9;
     sleep 1
-    #build symbolic link for steamcmd
-    #Not needed in my script I do not think ...
+	#build symbolic link for steamcmd
+	#Guess it is time to install UBUNTU to see these diffs.
     tput setaf 1; echo "$INSTALL_BUILD_SYM_LINK_STEAMCMD" ; tput setaf 9;
-    if command -v apt-get >/dev/null; then
-	    ln -s /usr/games/steamcmd /home/steam/steamcmd
-		# Leaving in ..
-    else 
-		echo ""
-		# I point to /home/steam/steamcmd/steamcmd.sh for RH Linux systems.
+	if command -v apt-get >/dev/null; then
+        ln -s /usr/games/steamcmd /home/steam/steamcmd
+    elif command -v yum >/dev/null; then
+        ln -s /usr/games/steamcmd /home/steam/steamcmd/linux32/steamcmd
+	else
+		echo "oops8"
     fi
     tput setaf 2; echo "$ECHO_DONE" ; tput setaf 9;
     sleep 1	
 }
-
 ########################################################################
 ##########Backup and Restore World DB and FWL Files START###############
 ########################################################################
@@ -635,12 +866,12 @@ function backup_world_data() {
         TODAY="$(date +%Y-%m-%d-%T)"
 		tput setaf 5; echo "$BACKUP_WORLD_CHECK_DIRECTORY" ; tput setaf 9;
 		tput setaf 5; echo "$BACKUP_WORLD_CHECK_DIRECTORY_1" ; tput setaf 9;
-		dldir=$backupPath
+		dldir=$backupPath/$worldname
 		[ ! -d "$dldir" ] && mkdir -p "$dldir"
         sleep 1
         ## Clean up files older than 2 weeks. Create a new backup.
 		tput setaf 1; echo "$BACKUP_WORLD_CONDUCT_CLEANING" ; tput setaf 9;
-        find $backupPath/* -mtime +14 -type f -delete
+        find $backupPath/$worldname/* -mtime +14 -type f -delete
 		tput setaf 2; echo "$BACKUP_WORLD_CONDUCT_CLEANING_LOKI" ; tput setaf 9;
         sleep 1
         ## Tar Section. Create a backup file, with the current date in its name.
@@ -656,7 +887,7 @@ function backup_world_data() {
         #give it a few
         sleep 10
 		tput setaf 1; echo "$BACKUP_WORLD_MAKING_TAR" ; tput setaf 9;
-        tar czf $backupPath/valheim-backup-$TODAY.tgz $worldpath/*
+        tar czf $backupPath/$worldname/valheim-backup-$TODAY.tgz $worldpath/$worldname/*
 		tput setaf 2; echo "$BACKUP_WORLD_MAKING_TAR_COMPLETE" ; tput setaf 9;
 		sleep 1
 		tput setaf 2; echo "$BACKUP_WORLD_RESTARTING_SERVICES" ; tput setaf 9;
@@ -664,7 +895,7 @@ function backup_world_data() {
         tput setaf 2; echo "$BACKUP_WORLD_RESTARTING_SERVICES_1" ; tput setaf 9;
 		echo ""
 		tput setaf 2; echo "$BACKUP_WORLD_SET_PERMS_FILES" ; tput setaf 9;
-		chown -Rf steam:steam ${backupPath}
+		chown -Rf steam:steam ${backupPath}/${worldname}
 		tput setaf 2; echo "$BACKUP_WORLD_PROCESS_COMPLETE" ; tput setaf 9;
 		echo ""
 	else 
@@ -678,7 +909,7 @@ function restore_world_data() {
 	#init empty array
     declare -a backups
 	#loop through backups and put in array
-    for file in ${backupPath}/*.tgz
+    for file in ${backupPath}/${worldname}/*.tgz
     do
         backups=(${backups[*]} "$file")
     done;
@@ -716,13 +947,13 @@ $(ColorGreen ' '"$RESTORE_WORLD_DATA_CONFIRM_1"' ') "
 		#give it a few
         sleep 5
 		#copy backup to worlds folder
-        tput setaf 2; echo "$RESTORE_WORLD_DATA_COPYING ${backups[$selectedIndex-1]} to ${worldpath}/" ; tput setaf 9;
-        cp ${backups[$selectedIndex-1]} ${worldpath}/
+        tput setaf 2; echo "$RESTORE_WORLD_DATA_COPYING ${backups[$selectedIndex-1]} to ${worldpath}/${worldname}/" ; tput setaf 9;
+        cp ${backups[$selectedIndex-1]} ${worldpath}/${worldname}/
 		#untar
         tput setaf 2; echo "$RESTORE_WORLD_DATA_UNPACKING ${worldpath}/${restorefile}" ; tput setaf 9;
-        tar xzf ${worldpath}/${restorefile} --strip-components=7 --directory ${worldpath}/  
-		chown -Rf steam:steam ${worldpath}
-		rm  ${worldpath}/*.tgz
+        tar xzf ${worldpath}/${worldname}/${restorefile} --strip-components=7 --directory ${worldpath}/${worldname}/  
+		chown -Rf steam:steam ${worldpath}/${worldname}/
+		rm  ${worldpath}/${worldname}/*.tgz
         tput setaf 2; echo "$RESTORE_WORLD_DATA_STARTING_VALHEIM_SERVICES" ; tput setaf 9;
         tput setaf 2; echo "$RESTORE_WORLD_DATA_CUSS_LOKI" ; tput setaf 9;
         systemctl start valheimserver_dfault.service
@@ -798,6 +1029,7 @@ function check_apply_server_updates_beta() {
 		echo "Update Found kicking process to Odin for updating!"
 		sleep 2
         continue_with_valheim_update_install
+		systemctl restart valheimserver.service
         echo ""
      fi
      echo ""
@@ -953,7 +1185,7 @@ function display_start_valheim() {
 function display_world_data_folder() {
     clear
     echo ""
-    sudo ls -lisa $worldpath
+    sudo ls -lisa $worldpath/$worldname
     echo ""
 }
 
@@ -1003,42 +1235,330 @@ clear
     echo ""
 }
 
+function get_worldseed(){
+	worldseed=$(cat > ${worldpath}/${worldname}/${serverdisplayname}.fwl)
+	echo -e '\E[32m'"$worldseed "
+}
 
 ########################################################################
 ##############Valheim Server Information output END#####################
 ########################################################################
 
 ########################################################################
-############# LD: Firewall section (WIP) START##########################
+############# (WIP) Firewall control section START #####################
 ########################################################################
 
-function firewall_status(){
-     if command -v ufw >/dev/null; then
-          firewall_status=$(systemctl is-active ufw)
-     elif command -v firewalld >/dev/null; then
-          firewall_status=$(systemctl is-active firewalld)     
-	 else
-       echo "..."
-     fi
-    
-	echo -e '\E[32m'"$firewall_status "
+## LD: Going to add disable / enable firewall and then
+## call use them in the start and stop service actions above.
+
+
+function is_firewall_installed(){
+    fwiufw=n
+    fwifwd=n
+	fwiipt=n
+	fwiipt6=n
+	fwiept=n
+  
+    if command -v ufw >/dev/null; then fwiufw=y ; fi
+    if command -v firewalld >/dev/null; then fwifwd=y ; fi
+	if command -v iptables >/dev/null; then fwiipt=y ; fi
+	if command -v ip6tables >/dev/null; then fwiipt6=y ; fi
+	if command -v eptables >/dev/null; then fwiept=y ; fi
+	
+	if [[ ( "${fwiufw}" == "y" ||  "${fwifwd}" == "y" || "${fwiipt}" == "y" || "${fwiipt6}" == "y" || "${fweipt}" == "y" ) ]] ; then
+		is_firewall_installed=y
+	else
+		is_firewall_installed=n
+    fi 	
+
+	## Testing for now...
+	if [ "$debugmsg" == "y" ] ; then 
+		echo -e '\E[32m'"The following firewall systems are found: UFW: ${fwiufw} -- Firewalld: ${fwifwd} -- Iptables: ${fwiipt} -- Ip6tables: ${fwiipt6} -- Eptables: ${fwiept} "
+	else
+		echo -e '\E[32m'"$is_firewall_installed "
+	fi
+	
 }
 
-function firewall_substate(){
-     if command -v ufw >/dev/null; then
-          firewall_substate=$(systemctl show -p SubState ufw)
-     elif command -v firewalld >/dev/null; then
-          firewall_substate=$(systemctl show -p SubState firewalld)    
-	 else
-       echo "..."
-     fi
-echo -e '\E[32m'"$firewall_substate "
+function is_firewall_enabled(){
+    fweufw=disabled
+    fwefwd=disabled
+	fweipt=disabled
+	fweipt6=disabled
+	fweept=disabled
+	
+    if command -v ufw >/dev/null; then 	fweufw=$(systemctl is-enabled ufw) ; fi
+    if command -v firewalld >/dev/null; then fwefwd=$(systemctl is-enabled firewalld) ; fi
+	
+	#if command -v iptables >/dev/null; then fweipt=$(systemctl is-enabled iptables) ; fi
+	#if command -v ip6tables >/dev/null; then fweipt=$(systemctl is-enabled ip6tables) ; fi
+	#if command -v eptables >/dev/null; then fweipt=$(systemctl is-enabled eptables) ; fi
+
+	if [[ ( "$fweufw" == "enabled" || "$fwefwd" == "enabled" || "$fweipt" == "enabled" || "$fweipt6" == "enabled" || "$fweept" == "enabled" ) ]] ; then
+		is_firewall_enabled="y"
+	else 	
+		is_firewall_enabled="n"
+	fi	
+
+	## Testing for now...
+	if [ "$debugmsg" == "y" ] ; then 
+		echo -e '\E[32m'"The following firewall systems enabled: -- UFW: ${fweufw} -- Firewalld: ${fwefwd} -- Iptables: ${fweipt}"
+	else
+		echo -e '\E[32m'"$is_firewall_enabled "
+	fi
 }
+
+function get_firewall_status(){
+	if [ "usefw" == "y" ] ;  then
+		if [ "${fwused}" == "u" ] ; then
+			if command -v ufw >/dev/null; then get_firewall_status=$(systemctl is-active ufw) ; fi
+		elif [ "${fwused}" == "f" ] ; then
+			if command -v firewalld >/dev/null; then get_firewall_status=$(systemctl is-active firewalld) ; fi
+		elif [ "${fwused}" == "i" ] ; then
+			#if command -v iptables >/dev/null; then get_firewall_status=$(systemctl is-active iptables) ; fi
+			#if command -v ip6tables >/dev/null; then get_firewall_status=$(systemctl is-active ip6tables) ; fi
+			#if command -v eptables >/dev/null; then get_firewall_status=$(systemctl is-active eptables) ; fi			
+			echo "Need to enter better code for [i/e]p6tbables..."
+		else
+			get_firewall_status="noneActive"
+		fi	
+	else
+		get_firewall_status="noActiceServiceFound"
+	fi
+	
+	if [ "$debugmsg" == "y" ] ; then 
+		echo -e '\E[32m'"Firewall management is not in use. If a firewall found enabled, please disable."
+	else
+		echo -e '\E[32m'"$get_firewall_status "
+	fi
+
+}
+
+function get_firewall_substate(){
+	if [ "usefw" == "y" ] ;  then
+		if [ "${fwused}" == "u" ] ; then
+			if command -v ufw >/dev/null; then get_firewall_substate=$(systemctl show -p SubState ufw) ; fi
+		elif [ "${fwused}" == "f" ] ; then
+			if command -v firewalld >/dev/null; then get_firewall_substate=$(systemctl show -p SubState firewalld) ; fi
+		elif [ "${fwused}" == "i" ] ; then
+			# if command -v iptables >/dev/null; then  get_firewall_substate=$(systemctl show -p SubState iptables) ; fi		
+			# if command -v ip6tables >/dev/null; then  get_firewall_substate=$(systemctl show -p SubState ip6tables) ; fi
+			# if command -v eptables >/dev/null; then  get_firewall_substate=$(systemctl show -p SubState eptables) ; fi
+			echo "Need to enter better code for [i/e]p6tbables..."	   
+		else
+			get_firewall_status="noServiceSubStatusFound"
+		fi
+	else
+		get_firewall_status="notInUse"
+	fi
+	
+	if [ "$debugmsg" == "y" ] ; then 
+		echo -e '\E[32m'"Firewall management is not in use. If a firewall found enabled, please disable."
+	else
+		echo -e '\E[32m'"$get_firewall_substate "
+	fi
+	
+	
+}
+
+
+function enable_prefered_firewall(){
+
+	if [ "$debugmsg" == "y" ] ; then 
+		echo -e '\E[32m'"START: Enabling and starting firewall."
+	fi
+
+    if [ "${fwinuse}" == "u" ] ; then
+        sudo systemctl unmask ufw && systemctl enable ufw && systemctl start ufw		  
+    elif [ "${fwinuse}" == "f" ] ; then
+        sudo systemctl unmask firewalld && systemctl enable firewalld && systemctl start firewalld		  
+    elif [ "${fwinuse}" == "i" ] ; then
+		if command -v iptables >/dev/null; then
+			sudo systemctl unmask iptables && systemctl enable iptables && systemctl start iptables		  
+		fi
+		if command -v ip6tables >/dev/null; then
+			sudo systemctl unmask ip6tables && systemctl enable ip6tables && systemctl start ip6tables		
+		fi
+		if command -v eptables >/dev/null; then
+			sudo systemctl unmask eptables && systemctl enable eptables && systemctl start eptables		  
+		fi
+	else
+		echo "No firewalls to enable"
+    fi
+	
+	if [ "$debugmsg" == "y" ] ; then 
+		echo -e '\E[32m'"END: Enabling and starting firewall."
+	fi
+}
+
+function disable_all_firewalls(){
+
+	if [ "$debugmsg" == "y" ] ; then 
+		echo -e '\E[32m'"START: Stopping and disabling ALL firewall systems installed."
+	fi
+	
+    if command -v ufw >/dev/null; then
+         sudo systemctl stop ufw && systemctl disable ufw 
+		 ## && systemctl mask ufw		  
+	fi	
+    if command -v firewalld >/dev/null; then
+         sudo systemctl stop firewalld && sudo systemctl disable firewalld 
+		 ## && systemctl mask firewalld	  
+    fi
+	if command -v iptables >/dev/null; then
+         sudo systemctl stop iptables && systemctl disable iptables 
+		 ## && systemctl mask iptables
+	fi
+	if command -v ip6tables >/dev/null; then
+		 sudo systemctl stop ip6tables && systemctl disable ip6tables 
+		 ## && systemctl mask ip6tables
+	fi
+	if command -v eptables >/dev/null; then
+		 sudo systemctl stop eptables && systemctl disable eptables 
+		 ## && systemctl mask eptables
+	fi		 
+
+	if [ "$debugmsg" == "y" ] ; then 
+		echo -e '\E[32m'"END: Stopping and disabling ALL firewall systems installed."
+	fi
+
+}
+
+function create_firewalld_service_file(){
+	if [ "${usefw}" == "y" ] ; then 
+		if [ "${fwused}" == "f" ] ; then
+			if [ "$sftc" == "ste" ] ; then
+				checkfile=/usr/lib/firewalld/services/steam.xml
+				if [ -f "$checkfile" ] ; then
+					echo "Steam<cmd> Firewalld service file already created."
+				else
+					cat >> /usr/lib/firewalld/services/steam.xml <<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+  <short>Steam service</short>
+  <description>These are the ports needed for Steam and Steamcmd</description>
+  <port protocol="upd" port="1200"/>
+  <port protocol="upd" port="27000-27015"/>
+  <port protocol="upd" port="27020"/>
+  <port protocol="tcp" port="27015-27016"/>
+  <port protocol="tcp" port="27030-27039"/>
+</service>
+EOF
+				fi
+			elif [ "$sftc" == "val" ] ; then    
+				checkfile=/usr/lib/firewalld/services/valheimserver-${worldname}.xml
+				if [ -f "$checkfile" ] ; then
+					echo "Steam<cmd> Firewalld service file already created."
+				else
+					cat >> /usr/lib/firewalld/services/valheimserver_${worldname}.xml <<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+   <short>Valheim ${worldname} Server</short>
+   <description>Valheim ${worldname} game server ports</description>
+   <port protocol="upd" port="${portnumber}-${portnumber+2}"/>
+ </service>
+EOF
+				fi
+			else
+				echo ""
+			fi 
+		fi
+	fi
+	sudo firewall-cmd --reload
+	cat "$checkfile"
+
+}
+
+function delete_firewalld_service_file(){
+	if [ "${usefw}" == "y" ] ; then 
+		if [ "${fwused}" == "f" ] ; then
+			if [ "$sftc" == "ste" ] ; then
+				checkfile=/usr/lib/firewalld/services/steam.xml
+				if [ -f "$checkfile" ] ; then
+					rm /usr/lib/firewalld/services/steam.xml
+				else
+					echo "File does not exist."
+				fi
+			elif [ "$sftc" == "val" ] ; then   
+				checkfile=/usr/lib/firewalld/services/valheimserver-${worldname}.xml
+				if [ -f "$checkfile" ] ; then
+					rm /usr/lib/firewalld/services/valheimserver-${worldname}.xml
+				else
+					echo "File does not exist."
+				fi
+			else
+				echo ""
+			fi 
+		fi
+	fi
+	sudo firewall-cmd --reload
+	cat "$checkfile"
+}
+
+function add_firewalld_public_service(){
+	if [ "${usefw}" == "y" ] ; then 
+		if [ "${fwused}" == "f" ] ; then
+			if [ "$sftc" == "ste" ] ; then
+				sudo firewall-cmd --zone=public --permanent --add-service=steam
+			elif [ "$sftc" == "val" ] ; then   
+				sudo firewall-cmd --zone=public --permanent --add-service=valheim-${worldname}
+			else
+				echo ""
+
+			fi
+		fi	
+	fi
+	sudo firewall-cmd --reload
+	sudo firewall-cmd --zone=public --permanent --list-services
+}
+
+function remove_firewalld_public_service(){
+	if [ "${usefw}" == "y" ] ; then 
+		if [ "${fwused}" == "f" ] ; then
+			if [ "$sftc" == "ste" ] ; then
+				sudo firewall-cmd --zone=public --permanent --remove-service=steam
+			elif [ "$sftc" == "val" ] ; then 
+				sudo firewall-cmd --zone=public --permanent --remove-service=valheim-${worldname}
+			else				
+				echo ""
+				# firewall-cmd --zone=public --permanent --remove-service=*
+				
+			fi
+		fi	
+		
+	fi
+	sudo firewall-cmd --reload
+	sudo firewall-cmd --zone=public --permanent --list-services
+}
+
 ########################################################################
-############# LD: Firewall section (WIP) END############################
+########################################################################
+####  List of different firewall  systems commands  
+#### ... as ref list until done. :)                
+########################################################################
+######################  ufw
+########################################################################
+####
+########################################################################
+####################### [e/i]p[6]tables ################################
+########################################################################
+#### List   #iptables -L OUTPUT -n --line-numbers
+#### Delete #iptables -D INPUT 5
+########################################################################
+######################  Firewalld 
+########################################################################
+### yum install firewalld -y
+### systemctl [is-active/is-enabled/status/enable/disable/start/stop] firewalld >/dev/null 2>&1 && echo YES || echo NO
+### firewall-cmd --state --get-default-zone --get-active-zones --get-zones --get-services 
+### firewall-cmd --zone=* --permanent --</add/remove>-port=*/* --list-all
+### firewall-cmd --reload
+########################################################################
 ########################################################################
 
 ########################################################################
+############# (WIP) Firewall control section END    ####################
+########################################################################
+
 ########################################################################
 ##############MAIN VALHEIM SERVER ADMIN FUNCTIONS END###################
 ########################################################################
@@ -1338,7 +1858,7 @@ sleep 1
 }
 
 function install_valheim_plus() {
-clear
+	clear
     echo ""
     if [ ! -f /usr/bin/unzip ]; then
     apt install unzip -y
@@ -2042,13 +2562,13 @@ echo -e '\E[32m'"$INTERNAL_IP $mymommyboughtmeaputerforchristmas "$internalip ; 
 }
 
 function server_status(){
-server_status=$(systemctl is-active valheimserver_default.service)
+server_status=$(systemctl is-active valheimserver_${worldname}.service)
 echo -e  '\E[32m'"$server_status "
 }
 
 function server_substate(){
 # systemctl option VALUE does not seam valid on RH so I removed. Should stil work.
-server_substate=$(systemctl show -p SubState valheimserver_default.service)
+server_substate=$(systemctl show -p SubState valheimserver_${worldname}.service)
 echo -e '\E[32m'"$server_substate "
 }
 
@@ -2071,19 +2591,20 @@ function are_mods_enabled() {
 }
 # LD: Set steamcmd based on Linux Flavor
 function set_steamexe() {
-    tput setaf 1; echo "$FUNCTION_SET_STEAMEXE_INFO" ; tput setaf 9;
-    if command -v apt-get >/dev/null; then
-	    steamexe=/home/steam/steamcmd
-    elif command -v yum >/dev/null; then
+	if [ "$debugmsg" == "y" ] ; then 
+		tput setaf 1; echo -ne "$FUNCTION_SET_STEAMEXE_INFO" ; tput setaf 9;
+	fi	
+	if command -v apt-get >/dev/null; then
+		steamexe=/home/steam/steamcmd
+	elif command -v yum >/dev/null; then
 	    steamexe=/home/steam/steamcmd/steamcmd.sh
-    else
-        echo ""
-    fi
-	echo "........................................."
-    echo $steamexe
-    echo "........................................."
-    tput setaf 2; echo "$ECHO_DONE" ; tput setaf 9;
-sleep 1
+	else
+		echo ""
+	fi
+	if [ "$debugmsg" == "y" ] ; then 
+		tput setaf 2; echo -ne "$ECHO_DONE" ; tput setaf 9;
+	fi	
+	sleep 1
 }
 
 # LD: Set the world server name.
@@ -2100,25 +2621,22 @@ function set_world_server() {
 			if [ -n "$REPLY" ] ; then
 				worldname=${world}
 				echo "World menu selection: ${world}"
-				echo "Would session set: ${worldname}"
 				break;
 			else
 				echo "Invalid selection"	
-				echo ""			  
 			fi
 		done	
-		echo ".............................."		
-		echo "Worldname set to: ${worldname}"
-		echo ".............................."		
-	elif [ "$worldname" = "" ] && [ n "$worldlistarray" ] ; then
-		worldname="..."
-		echo "No worlds setup yet?"		
+#		echo ".............................."		
+#		echo "Worldname set to: ${worldname}"
+#		echo ".............................."		
+	elif [ "$worldname" = "" ] && [ -n "$worldlistarray" ] ; then
+		worldname="Default"
 		echo ""	
     else 
 		echo ""	
 	fi
 	request99="n"
-	#clear
+	clear
 }
 ########################################################################
 ##########################MENUS STATUS VARIBLES END#####################
@@ -2243,9 +2761,11 @@ $(ColorOrange '║')" $(display_local_IP)
 	echo -ne "
 $(ColorOrange '║') $FUNCTION_HEADER_MENU_INFO_SERVER_PORT " ${currentPort}
 	echo -ne "
-$(ColorOrange '║') $FUNCTION_HEADER_MENU_INFO_SERVER_UFW" $(firewall_status)
+$(ColorOrange '║') Is there an enabled firewall? " $(is_firewall_enabled)
 	echo -ne "
-$(ColorOrange '║') $FUNCTION_HEADER_MENU_INFO_SERVER_UFW_SUBSTATE" $(firewall_substate) 
+$(ColorOrange '║') $FUNCTION_HEADER_MENU_INFO_SERVER_UFW" $(get_firewall_status)
+	echo -ne "
+$(ColorOrange '║') $FUNCTION_HEADER_MENU_INFO_SERVER_UFW_SUBSTATE" $(get_firewall_substate) 
 	echo -ne " 
 $(ColorOrange '║') $FUNCTION_HEADER_MENU_INFO_PUBLIC_LIST " $(display_public_status_on_or_off)
 	echo -ne "
@@ -2312,7 +2832,7 @@ $(ColorPurple ''"$CHOOSE_MENU_OPTION"'') "
 
 # Display Main Menu System
 menu(){
-	set_world_server
+	if [ "${worldname}" = "" ] ; then  set_world_server ; fi
 	menu_header
 	echo -ne "
 $(ColorOrange ' '"$FUNCTION_MAIN_MENU_CHECK_SCRIPT_UPDATES_HEADER"' ')
